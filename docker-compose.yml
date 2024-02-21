@@ -1,0 +1,99 @@
+version: "3.9"
+
+networks:
+  default_net:
+    name: default_net
+    driver: bridge
+volumes:
+  database-store:
+    driver: local
+services:
+  # CARTS DATABASE
+  database-carts:
+    image: postgres:13
+    container_name: database-carts
+    volumes:
+      - ~/.docker-conf/postgres/data/:/var/lib/postgres
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: carlos
+      POSTGRES_PASSWORD: 12345
+      POSTGRES_DB: carts
+    networks:
+      - default_net
+  
+  # PAYMENTS DATABASE
+  database-payments:
+    image: postgres:13
+    container_name: database-payments
+    volumes:
+      - ~/.docker-conf/postgres/data/:/var/lib/postgres
+    ports:
+      - "5433:5432"
+    environment:
+      POSTGRES_USER: carlos
+      POSTGRES_PASSWORD: 12345
+      POSTGRES_DB: promotions
+    networks:
+      - default_net
+
+  # PRODUCTS DATABASE
+  database-products:
+    image: postgres:13
+    container_name: database-products
+    volumes:
+      - ~/.docker-conf/postgres/data/:/var/lib/postgres
+    ports:
+      - "5434:5432"
+    environment:
+      POSTGRES_USER: carlos
+      POSTGRES_PASSWORD: 12345
+      POSTGRES_DB: products
+    networks:
+      - default_net
+
+  # PROMOTIONS DATABASE  
+  database-promotions:
+    image: postgres:13
+    container_name: database-promotions
+    volumes:
+      - ~/.docker-conf/postgres/data/:/var/lib/postgres
+    ports:
+      - "5435:5432"
+    environment:
+      POSTGRES_USER: carlos
+      POSTGRES_PASSWORD: 12345
+      POSTGRES_DB: promotions
+    networks:
+      - default_net
+
+  # USERS DATABASE   
+  database-users:
+    image: postgres:13
+    container_name: database-users
+    volumes:
+      - ~/.docker-conf/postgres/data/:/var/lib/postgres
+    ports:
+      - "5436:5432"
+    environment:
+      POSTGRES_USER: carlos
+      POSTGRES_PASSWORD: 12345
+      POSTGRES_DB: users
+    networks:
+      - default_net
+
+  # RABBITMQ
+  rabbitmq:
+    image: rabbitmq:3.12.12-management
+    container_name: rabbitmq-project-api
+    ports:
+      - 5672:5672
+      - 15672:15672
+    environment:
+      RABBITMQ_DEFAULT_USER: carlos
+      RABBITMQ_DEFAULT_PASS: 12345
+    volumes:
+      - database-store:/rabbitmq
+    networks:
+      - default_net

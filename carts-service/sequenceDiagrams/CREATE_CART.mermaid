@@ -1,0 +1,33 @@
+sequenceDiagram
+    participant Client
+    participant ProductService
+    participant ProductRepository
+    participant CartService
+    participant CartRepository
+
+
+    Client ->> CartService: Create Cart
+    CartService ->> CartRepository: Create Cart
+    CartRepository ->> Client: Cart
+
+    alt Add Products to Cart
+    Client ->> ProductRepository: Get Product By Id
+    ProductRepository -->> Client: Product
+
+    Client ->> CartService: Add Products to Cart
+    CartService ->> CartRepository: Update Cart
+    CartRepository -->> CartService: Cart
+    CartService -->> Client: Cart
+    end
+
+    alt Add Shipping Address to Cart
+        Client ->> CartService: Add Shipping Method to Cart
+        CartService ->> CartRepository: Update Cart
+        CartRepository ->> Client: Cart
+    end
+
+    alt Add Payment Method to Cart
+        Client ->> CartService: Add Payment Method to Cart
+        CartService ->> CartRepository: Update Cart
+        CartRepository ->> Client: Cart
+    end

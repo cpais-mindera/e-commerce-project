@@ -1,0 +1,17 @@
+sequenceDiagram
+    participant Client
+    participant UserService
+    participant UserRepository
+
+    Client ->> UserService: GET User By ID
+    alt Authorization header is valid
+        UserService ->> UserRepository: findByUsernameAndPassword(username, password)
+    alt User found
+        UserRepository -->> UserService: User
+        UserService -->> Client: User
+    else User not found
+        UserService --x Client: UserDoesNotExistsException
+    end
+    else Invalid authorization header
+        UserService --x Client: InvalidHeaderAuthorizationException
+    end

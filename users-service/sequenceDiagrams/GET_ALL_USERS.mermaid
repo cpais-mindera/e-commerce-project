@@ -1,0 +1,23 @@
+sequenceDiagram
+    participant Client
+    participant UserService
+    participant UserRepository
+
+    Client ->> UserService: getAllUsers(authorization, gender)
+    alt Check if user exists
+        UserService -->> UserRepository: findUserByUsernameAndPassword
+    else User does not exists
+        UserService -->> Client: InvalidHeaderAuthorizationException
+        alt User Exists
+            UserService ->> UserRepository: Get User Role
+
+        else User is not admin
+            UserService --> Client: UserDoesNotHavePermissionsException
+
+            alt User is admin
+                UserService ->> UserRepository: findAllByGender(Gender.valueOf(gender))
+                UserRepository -->> UserService: List<User>
+                UserService -->> Client: List<User>
+            end
+        end
+    end

@@ -1,0 +1,15 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5434/products
+    username: ${POSTGRES_USER}
+    password: ${POSTGRES_PASS}
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: true
+
+springdoc:
+  show-actuator: true
+
+server:
+  port: 8083

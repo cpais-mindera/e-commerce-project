@@ -1,0 +1,17 @@
+sequenceDiagram
+    participant Client
+    participant UserService
+    participant UserRepository
+
+    Client ->> UserService: Update User
+    UserService -->> UserRepository : findUserByUsernameAndPassword
+    UserRepository -->> UserService : User
+
+    alt: Authorization User is the same
+        UserService ->> UserRepository: Update all User properties
+        UserRepository -->> UserService: User
+        UserService -->> Client : User
+    end
+    alt: Authorization User is not valid
+        UserService -->> Client: UserDoesNotHavePermissionsException
+    end
