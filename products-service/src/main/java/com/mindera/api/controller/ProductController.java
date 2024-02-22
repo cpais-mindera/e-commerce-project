@@ -43,4 +43,6 @@ public class ProductController extends ExceptionsController {
     public ResponseEntity<Product> patchProduct(@RequestHeader("Authorization") String authorization, @RequestBody Product product, @PathVariable UUID uuid) {
         return ResponseEntity.ok().body(productService.patchProduct(authorization, product, uuid));
     }
+
+    // TODO Disable
 }

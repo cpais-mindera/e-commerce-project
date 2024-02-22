@@ -12,17 +12,12 @@ import java.util.List;
 @RestController
 @ControllerAdvice
 @RequestMapping("/users")
-public class UserController {
+public class UserController extends BaseController {
 
     private final UserService userService;
 
     public UserController(UserService userService) {
         this.userService = userService;
-    }
-
-    @GetMapping("/login")
-    public ResponseEntity<User> getUserLogin(@RequestHeader("Authorization") String authorization) {
-        return ResponseEntity.ok().body(userService.getUserLogin(authorization));
     }
 
     // GET_USER_BY_ID.mermaid
@@ -64,4 +59,18 @@ public class UserController {
                                           @RequestBody User user) {
         return ResponseEntity.status(HttpStatus.ACCEPTED).body(userService.patchUser(authorization, id, user));
     }
+
+    @PatchMapping("/{id}/disable")
+    public ResponseEntity<User> patchUserStatus(@RequestHeader("Authorization") String authorization,
+                                          @PathVariable Long id) {
+        return ResponseEntity.status(HttpStatus.ACCEPTED).body(userService.patchUserStatus(authorization, id));
+    }
+
+    /*
+    // TODO
+
+    // TODO All gets using cache
+    // PUT PATCH DELETE Cache evict
+    */
 }
+

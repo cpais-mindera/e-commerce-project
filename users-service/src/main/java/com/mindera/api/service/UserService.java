@@ -55,23 +55,13 @@ public class UserService {
             user.setStatus(UserStatus.ACTIVE);
             userRepository.save(user);
         } catch (DataIntegrityViolationException ex) {
-            switch(ex.getCause()) {
-                case ConstraintViolationException constraintEx -> {
-                    String constraintName = constraintEx.getConstraintName();
-                    throw new UserDuplicateException(constraintName);
-                }
-                case PropertyValueException propertyEx -> {
-                    String nullableValue = propertyEx.getPropertyName();
-                    throw new UserNotNullPropertyException(nullableValue);
-                }
-                default -> throw ex;
-            }
+            throwDataIntegrityException(ex);
         }
         return user;
     }
 
     public User updateUser(String authorization, Long id, User user) {
-        boolean sameUser = isSameAuthorizationUser(authorization, user, id);
+        boolean sameUser = isSameAuthorizationUser(authorization, id);
         if (sameUser) {
             var updateUser = User.builder()
                     .id(id)
@@ -88,20 +78,14 @@ public class UserService {
             try {
                 userRepository.save(updateUser);
             } catch (DataIntegrityViolationException ex) {
-                if (ex.getCause() instanceof ConstraintViolationException constraintEx) {
-                    String constraintName = constraintEx.getConstraintName();
-                    throw new UserDuplicateException(constraintName);
-                } else if (ex.getCause() instanceof PropertyValueException propertyEx) {
-                    String nullableValue = propertyEx.getPropertyName();
-                    throw new UserNotNullPropertyException(nullableValue);
-                }
+                throwDataIntegrityException(ex);
             }
         }
         throw new UserDoesNotHavePermissionsException();
     }
 
     public User patchUser(String authorization, Long id, User user) {
-        boolean sameUser = isSameAuthorizationUser(authorization, user, id);
+        boolean sameUser = isSameAuthorizationUser(authorization, id);
         if (sameUser) {
             // that throw will never reach because if the user does not exists we will throw error in isSameAuthorizationUser
             User userDatabase = userRepository.findById(id).orElseThrow(() -> new UserDoesNotExistsException(id));
@@ -110,21 +94,43 @@ public class UserService {
             try {
                 userRepository.save(userDatabase);
             } catch (DataIntegrityViolationException ex) {
-                if (ex.getCause() instanceof ConstraintViolationException constraintEx) {
-                    String constraintName = constraintEx.getConstraintName();
-                    throw new UserDuplicateException(constraintName);
-                } else if (ex.getCause() instanceof PropertyValueException propertyEx) {
-                    String nullableValue = propertyEx.getPropertyName();
-                    throw new UserNotNullPropertyException(nullableValue);
-                }
+                throwDataIntegrityException(ex);
             }
         }
         throw new UserDoesNotHavePermissionsException();
     }
 
+    public User patchUserStatus(String authorization, Long id) {
+        boolean sameUser = isSameAuthorizationUser(authorization, id);
+        if (sameUser) {
+            // that throw will never reach because if the user does not exists we will throw error in isSameAuthorizationUser
+            User userDatabase = userRepository.findById(id).orElseThrow(() -> new UserDoesNotExistsException(id));
+            userDatabase.setStatus(UserStatus.INACTIVE);
 
+            try {
+                userRepository.save(userDatabase);
+            } catch (DataIntegrityViolationException ex) {
+                throwDataIntegrityException(ex);
+            }
+        }
+        throw new UserDoesNotHavePermissionsException();
+    }
 
-    private boolean isSameAuthorizationUser(String authorization, User user, Long id) {
+    private void throwDataIntegrityException(DataIntegrityViolationException ex) {
+        switch(ex.getCause()) {
+            case ConstraintViolationException constraintEx -> {
+                String constraintName = constraintEx.getConstraintName();
+                throw new UserDuplicateException(constraintName);
+            }
+            case PropertyValueException propertyEx -> {
+                String nullableValue = propertyEx.getPropertyName();
+                throw new UserNotNullPropertyException(nullableValue);
+            }
+            default -> throw ex;
+        }
+    }
+
+    private boolean isSameAuthorizationUser(String authorization, Long id) {
         String base64Credentials = authorization.substring(6).trim();
         String credentials = new String(Base64.getDecoder().decode(base64Credentials));
         String[] parts = credentials.split(":");

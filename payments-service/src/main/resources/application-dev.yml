@@ -17,4 +17,7 @@ springdoc:
   show-actuator: true
 
 server:
-  port: 8083
+  port: 8080
+
+queue:
+  payments: PAYMENTS
