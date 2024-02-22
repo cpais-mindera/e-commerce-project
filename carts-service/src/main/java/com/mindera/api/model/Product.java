@@ -1,42 +1,28 @@
-package com.mindera.api.domain;
+package com.mindera.api.model;
 
 import com.mindera.api.enums.Category;
 import com.mindera.api.enums.Size;
-import jakarta.persistence.*;
 import lombok.*;
 
 import java.util.UUID;
 
+@Data
 @Getter
 @Setter
 @NoArgsConstructor
 @Builder
 @AllArgsConstructor
-@Entity
-@Table(name = "products")
 @ToString
 public class Product {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
-    @Column(nullable = false)
     private String description;
-    @Column(nullable = false)
     private Double defaultPrice;
-    @Column
     private Double discountedPrice;
-    @Column(unique = true)
     private String name;
-    @Column(nullable = false)
     private String colour;
-    @Column
-    @Enumerated(EnumType.STRING)
     private Size size;
-    @Column
     private Integer stock;
-    @Column
-    @Enumerated(EnumType.STRING)
     private Category category;
 
     public Product(String description, Double defaultPrice, Double discountedPrice, String name, String colour, Size size, Integer stock, Category category) {

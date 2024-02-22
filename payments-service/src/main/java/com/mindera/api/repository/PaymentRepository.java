@@ -1,10 +1,10 @@
 package com.mindera.api.repository;
 
-import com.mindera.api.domain.Example;
+import com.mindera.api.domain.Payment;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public interface ExampleRepository extends JpaRepository<Example, Long> {
+public interface PaymentRepository extends JpaRepository<Payment, Long> {
 
 }
