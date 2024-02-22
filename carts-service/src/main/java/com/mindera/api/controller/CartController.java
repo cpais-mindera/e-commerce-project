@@ -13,7 +13,7 @@ import java.util.UUID;
 @RestController
 @ControllerAdvice
 @RequestMapping("/carts")
-public class CartController extends ExceptionsController {
+public class CartController extends BaseController {
 
     private final CartService cartService;
 

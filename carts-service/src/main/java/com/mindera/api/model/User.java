@@ -121,3 +121,4 @@ public class User {
         return userDatabase;
     }
 }
+// lib para os domains todos
