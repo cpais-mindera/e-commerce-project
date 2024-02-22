@@ -1,9 +1,0 @@
-spring:
-  datasource:
-    url: jdbc:postgresql://localhost:5432/postgres
-    username: carlos
-    password: 12345
-  jpa:
-    hibernate:
-      ddl-auto: validate
-    show-sql: false

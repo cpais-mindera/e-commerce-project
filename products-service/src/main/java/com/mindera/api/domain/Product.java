@@ -4,8 +4,6 @@ import com.mindera.api.enums.Category;
 import com.mindera.api.enums.Size;
 import jakarta.persistence.*;
 import lombok.*;
-import org.hibernate.annotations.UuidGenerator;
-
 import java.util.UUID;
 
 @Getter

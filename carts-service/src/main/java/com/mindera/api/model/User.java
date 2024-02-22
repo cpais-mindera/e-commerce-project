@@ -1,6 +1,7 @@
 package com.mindera.api.model;
 
 import com.mindera.api.domain.Address;
+import com.mindera.api.domain.PaymentMethod;
 import com.mindera.api.enums.Gender;
 import com.mindera.api.enums.Role;
 import com.mindera.api.enums.UserStatus;
@@ -12,8 +13,6 @@ import lombok.*;
 @NoArgsConstructor
 @Builder
 @AllArgsConstructor
-@Entity
-@Table(name = "users")
 @ToString
 public class User {
 
@@ -32,7 +31,7 @@ public class User {
     @Embedded
     private Contacts contacts;
     @Embedded
-    private PaymentMethods paymentMethods;
+    private PaymentMethod paymentMethods;
     @Embedded
     Address address;
     @Column
@@ -44,7 +43,7 @@ public class User {
     private UserStatus status;
 
     public User(String username, String vatNumber, Integer age, Gender gender,
-                Contacts contacts, PaymentMethods paymentMethods, Address address,
+                Contacts contacts, PaymentMethod paymentMethods, Address address,
                 String password, Role role, UserStatus status) {
         this.username = username;
         this.vatNumber = vatNumber;
@@ -81,7 +80,7 @@ public class User {
             }
         }
         if (user.getPaymentMethods() != null) {
-            PaymentMethods paymentMethods = user.getPaymentMethods();
+            PaymentMethod paymentMethods = user.getPaymentMethods();
 
             if (paymentMethods.getCardHolderName() != null) {
                 userDatabase.getPaymentMethods().setCardHolderName(paymentMethods.getCardHolderName());

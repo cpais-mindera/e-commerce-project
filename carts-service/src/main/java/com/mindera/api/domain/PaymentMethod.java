@@ -1,6 +1,5 @@
 package com.mindera.api.domain;
 
-import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
 import jakarta.validation.constraints.Size;
 import lombok.*;

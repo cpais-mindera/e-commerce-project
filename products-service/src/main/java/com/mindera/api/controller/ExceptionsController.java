@@ -1,17 +1,12 @@
 package com.mindera.api.controller;
 
-import com.mindera.api.domain.Product;
 import com.mindera.api.exception.*;
 import com.mindera.api.model.Error;
-import com.mindera.api.service.ProductService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.UUID;
-
 import static com.mindera.api.model.Error.createErrorHandler;
-
 
 @RestController
 @ControllerAdvice

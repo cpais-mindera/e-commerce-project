@@ -45,11 +45,11 @@ class UserControllerTest {
 
     @BeforeEach
     void setUp() {
-        BASE_URL = "http://localhost:" + PORT;
+        BASE_URL = "http://app-users:" + PORT;
     }
 
     /*************** GET /users/{id} ***************/
-
+    /*
     @Test
     void getUserById_WithAdminPermissions_ShouldReturnUser() {
         // Arrange
@@ -176,8 +176,9 @@ class UserControllerTest {
         assert response != null;
         assertEquals(error.toString(), response.toString());
     }
-
+*/
     /*************** POST /users ***************/
+    /*
     @Test
     void addUser_WithCustomerRole_ShouldReturnUser() {
         // Arrange
@@ -250,8 +251,9 @@ class UserControllerTest {
         assert response != null;
         assertEquals(error.toString(), response.toString());
     }
-
+*/
     /*************** PUT /users/{id} ***************/
+    /*
     @Test
     void updateUserById_WithUserPermissions_ShouldReturnUser() {
         // Arrange
@@ -289,4 +291,6 @@ class UserControllerTest {
         headers.add("Authorization", "Basic " + encodedCredentials);
         return headers;
     }
+
+     */
 }

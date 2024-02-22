@@ -8,7 +8,7 @@ volumes:
   database-store:
     driver: local
 services:
-  # CARTS DATABASE
+  ############################ CARTS ############################
   database-carts:
     image: postgres:13
     container_name: database-carts
@@ -22,8 +22,33 @@ services:
       POSTGRES_DB: carts
     networks:
       - default_net
+
+  app-carts:
+    container_name: app-carts
+    build:
+      context: "./carts-service"
+    ports:
+      - 8082:8080
+    depends_on:
+      - database-carts
+      - rabbitmq
+    environment:
+      TZ: Europe/Lisbon
+      DB_HOST: database-carts
+      DB_PORT: 5432
+      DB_NAME: carts
+      DB_USER: carlos
+      DB_PASS: 12345
+      SQL_SHOW: true
+      DLL_AUTO: update
+      RABBIT_HOST: rabbitmq
+      RABBIT_PORT: 5672
+      RABBIT_USER: carlos
+      RABBIT_PASS: 12345
+    networks:
+      - default_net
   
-  # PAYMENTS DATABASE
+  ############################ PAYMENTS ############################
   database-payments:
     image: postgres:13
     container_name: database-payments
@@ -34,11 +59,36 @@ services:
     environment:
       POSTGRES_USER: carlos
       POSTGRES_PASSWORD: 12345
-      POSTGRES_DB: promotions
+      POSTGRES_DB: payments
     networks:
       - default_net
 
-  # PRODUCTS DATABASE
+  app-payments:
+    container_name: app-payments
+    build:
+      context: "./payments-service"
+    ports:
+      - 8083:8080
+    depends_on:
+      - database-payments
+      - rabbitmq
+    environment:
+      TZ: Europe/Lisbon
+      DB_HOST: database-payments
+      DB_PORT: 5432
+      DB_NAME: payments
+      DB_USER: carlos
+      DB_PASS: 12345
+      SQL_SHOW: true
+      DLL_AUTO: update
+      RABBIT_HOST: rabbitmq
+      RABBIT_PORT: 5672
+      RABBIT_USER: carlos
+      RABBIT_PASS: 12345
+    networks:
+      - default_net
+
+  ############################ PRODUCTS ############################
   database-products:
     image: postgres:13
     container_name: database-products
@@ -52,8 +102,33 @@ services:
       POSTGRES_DB: products
     networks:
       - default_net
+    
+  app-products:
+    container_name: app-products
+    build:
+      context: "./products-service"
+    ports:
+      - 8084:8080
+    depends_on:
+      - database-products
+      - rabbitmq
+    environment:
+      TZ: Europe/Lisbon
+      DB_HOST: database-products
+      DB_PORT: 5432
+      DB_NAME: products
+      DB_USER: carlos
+      DB_PASS: 12345
+      SQL_SHOW: true
+      DLL_AUTO: update
+      RABBIT_HOST: rabbitmq
+      RABBIT_PORT: 5672
+      RABBIT_USER: carlos
+      RABBIT_PASS: 12345
+    networks:
+      - default_net
 
-  # PROMOTIONS DATABASE  
+  ############################ PROMOTIONS ############################
   database-promotions:
     image: postgres:13
     container_name: database-promotions
@@ -68,7 +143,32 @@ services:
     networks:
       - default_net
 
-  # USERS DATABASE   
+  app-promotions:
+    container_name: app-promotions
+    build:
+      context: "./promotions-service"
+    ports:
+      - 8085:8080
+    depends_on:
+      - database-promotions
+      - rabbitmq
+    environment:
+      TZ: Europe/Lisbon
+      DB_HOST: database-promotions
+      DB_PORT: 5432
+      DB_NAME: promotions
+      DB_USER: carlos
+      DB_PASS: 12345
+      SQL_SHOW: true
+      DLL_AUTO: update
+      RABBIT_HOST: rabbitmq
+      RABBIT_PORT: 5672
+      RABBIT_USER: carlos
+      RABBIT_PASS: 12345
+    networks:
+      - default_net
+
+  ############################ USERS ############################
   database-users:
     image: postgres:13
     container_name: database-users
@@ -83,7 +183,32 @@ services:
     networks:
       - default_net
 
-  # RABBITMQ
+  app-users:
+    container_name: app-users
+    build:
+      context: "./users-service"
+    ports:
+      - 8086:8080
+    depends_on:
+      - database-users
+      - rabbitmq
+    environment:
+      TZ: Europe/Lisbon
+      DB_HOST: database-users
+      DB_PORT: 5432
+      DB_NAME: users
+      DB_USER: carlos
+      DB_PASS: 12345
+      SQL_SHOW: true
+      DLL_AUTO: update
+      RABBIT_HOST: rabbitmq
+      RABBIT_PORT: 5672
+      RABBIT_USER: carlos
+      RABBIT_PASS: 12345
+    networks:
+      - default_net      
+
+  ############################ RABBITMQ ############################
   rabbitmq:
     image: rabbitmq:3.12.12-management
     container_name: rabbitmq-project-api

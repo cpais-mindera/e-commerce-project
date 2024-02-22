@@ -11,7 +11,3 @@ public class UsersApplication {
 	}
 
 }
-
-/*
-// stripe method payments
-*/

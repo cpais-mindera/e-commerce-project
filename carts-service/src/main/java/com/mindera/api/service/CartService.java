@@ -21,6 +21,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
+import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -70,16 +71,16 @@ public class CartService {
         if (user.getBody() == null) {
             throw new UserInternalServerErrorException();
         }
-        var cart = cartRepository.findById(cartId).orElseThrow(() -> new CartNotFoundException(cartId));
+        var cart = cartRepository.findById(cartId).orElseThrow(() -> new CartDoesNotExistsException(cartId));
 
         try {
             ResponseEntity<Product> productResponse = restTemplate.exchange("http://localhost:8082/products/" + product.getId(), HttpMethod.GET, httpEntity, Product.class);
             if (productResponse.getBody() == null) {
                 throw new ProductsInternalServerErrorException();
             }
-            cart.getProducts().add(product);
+            cart.getProductList().add(product);
 
-            double totalPrice = cart.getProducts().stream().mapToDouble(product1 -> product1.getDefaultPrice() - product1.getDiscountedPrice()).sum();
+            double totalPrice = cart.getProductList().stream().mapToDouble(product1 -> product1.getDefaultPrice() - product1.getDiscountedPrice()).sum();
             cart.setTotalPrice(totalPrice);
 
             cartRepository.save(cart);
@@ -98,7 +99,7 @@ public class CartService {
         if (user.getBody() == null) {
             throw new UserInternalServerErrorException();
         }
-        var cart = cartRepository.findById(cartId).orElseThrow(() -> new CartNotFoundException(cartId));
+        var cart = cartRepository.findById(cartId).orElseThrow(() -> new CartDoesNotExistsException(cartId));
         try {
             cart.setAddress(address);
             cartRepository.save(cart);
@@ -118,7 +119,7 @@ public class CartService {
             throw new UserInternalServerErrorException();
         }
 
-        var cart = cartRepository.findById(cartId).orElseThrow(() -> new CartNotFoundException(cartId));
+        var cart = cartRepository.findById(cartId).orElseThrow(() -> new CartDoesNotExistsException(cartId));
 
         // Send Message sync through payment service
         PaymentMessage paymentMessage = new PaymentMessage();
@@ -152,13 +153,13 @@ public class CartService {
         if (user.getBody() == null) {
             throw new UserInternalServerErrorException();
         }
-        var cart = cartRepository.findById(cartId).orElseThrow(() -> new CartNotFoundException(cartId));
+        var cart = cartRepository.findById(cartId).orElseThrow(() -> new CartDoesNotExistsException(cartId));
 
         try {
-            var updatedProductList = cart.getProducts().stream().filter((product) -> !product.getId().equals(productId)).collect(Collectors.toList());
-            cart.setProducts(updatedProductList);
+            List<Product> updatedProductList = cart.getProductList().stream().filter((product) -> !product.getId().equals(productId)).collect(Collectors.toList());
+            cart.setProductList(updatedProductList);
 
-            double totalPrice = cart.getProducts().stream().mapToDouble(product1 -> product1.getDefaultPrice() - product1.getDiscountedPrice()).sum();
+            double totalPrice = cart.getProductList().stream().mapToDouble(product1 -> product1.getDefaultPrice() - product1.getDiscountedPrice()).sum();
             cart.setTotalPrice(totalPrice);
 
             cartRepository.save(cart);

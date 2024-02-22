@@ -4,24 +4,21 @@ import jakarta.persistence.*;
 import lombok.*;
 import org.springframework.data.annotation.CreatedDate;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 
-@Getter
-@Setter
-@NoArgsConstructor
+@Data
 @Builder
-@AllArgsConstructor
 @Entity
-@Table(name = "promotions")
+@Table(name = "carts")
 @ToString
 public class Cart {
 
-
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
-    private UUID uuid;
+    private UUID id;
 
     @Column
     private double totalPrice;
@@ -29,8 +26,8 @@ public class Cart {
     @Embedded
     private Address address;
 
-    @Column
-    private List<Product> products;
+    @OneToMany(mappedBy = "cart", cascade = CascadeType.ALL)
+    private List<Product> productList;
 
     @Embedded
     private PaymentMethod paymentMethod;
@@ -42,37 +39,4 @@ public class Cart {
     @CreatedDate
     private Date createdAt;
 
-
-    /*
-    public static Example patchPromotion(Example promotion, Example promotionDatabase) {
-        if (promotion.getName() != null) {
-            promotionDatabase.setName(promotion.getName());
-        }
-
-        if (promotion.getDescription() != null) {
-            promotionDatabase.setDescription(promotion.getDescription());
-        }
-
-        if (promotion.getDiscount() != null) {
-            promotionDatabase.setDiscount(promotion.getDiscount());
-        }
-
-        if (promotion.getProductId() != null) {
-            promotionDatabase.setProductId(promotion.getProductId());
-        }
-
-        if (promotion.getCategory() != null) {
-            promotionDatabase.setCategory(promotion.getCategory());
-        }
-
-        promotionDatabase.setApplyToAllProducts(promotion.isApplyToAllProducts());
-
-        if (promotion.getPromotionStatus() != null) {
-            promotionDatabase.setPromotionStatus(promotion.getPromotionStatus());
-        }
-
-        return promotionDatabase;
-    }
-
-     */
 }

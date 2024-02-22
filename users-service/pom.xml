@@ -9,10 +9,10 @@
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>com.mindera</groupId>
-	<artifactId>api-example</artifactId>
+	<artifactId>users-service</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<name>Api Example</name>
-	<description>Demo project for Spring Boot</description>
+	<name>Users Service</name>
+	<description>Users Service</description>
 	<properties>
 		<java.version>21</java.version>
 		<starter.test.version>3.2.2</starter.test.version>

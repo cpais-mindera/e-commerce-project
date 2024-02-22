@@ -1,43 +1,49 @@
 package com.mindera.api.controller;
 
-import org.springframework.web.bind.annotation.*;
+import com.mindera.api.exception.*;
+import com.mindera.api.model.Error;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.ControllerAdvice;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.bind.annotation.RestController;
+
+import static com.mindera.api.model.Error.createErrorHandler;
 
 @RestController
 @ControllerAdvice
-@RequestMapping("/example")
 public abstract class ExceptionsController {
 
-    /*
     // Exception Handlers
-    @ExceptionHandler(ProductDoesNotExistsException.class)
+    @ExceptionHandler(CartDoesNotExistsException.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
-    private ResponseEntity<Error> handleProductDoesNotExistsException(ProductDoesNotExistsException ex) {
+    private ResponseEntity<Error> handleCartDoesNotExistsException(CartDoesNotExistsException ex) {
         return createErrorHandler(HttpStatus.NOT_FOUND, ex);
     }
 
-    @ExceptionHandler(ProductDuplicateException.class)
+    @ExceptionHandler(CartDuplicateException.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
-    private ResponseEntity<Error> handleProductDuplicateException(ProductDuplicateException ex) {
+    private ResponseEntity<Error> handleCartDuplicateException(CartDuplicateException ex) {
         return createErrorHandler(HttpStatus.CONFLICT, ex);
     }
 
-    @ExceptionHandler(ProductNotNullPropertyException.class)
+    @ExceptionHandler(CartNotNullPropertyException.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
-    private ResponseEntity<Error> handleProductNotNullPropertyException(ProductNotNullPropertyException ex) {
+    private ResponseEntity<Error> handleCartNotNullPropertyException(CartNotNullPropertyException ex) {
         return createErrorHandler(HttpStatus.PRECONDITION_REQUIRED, ex);
     }
 
-    @ExceptionHandler(UserDoesNotHavePermissionsException.class)
+    @ExceptionHandler(ProductsInternalServerErrorException.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
-    private ResponseEntity<Error> handleUserDoesNotHavePermissionsException(UserDoesNotHavePermissionsException ex) {
-        return createErrorHandler(HttpStatus.UNAUTHORIZED, ex);
+    private ResponseEntity<Error> handleUserDoesNotHavePermissionsException(ProductsInternalServerErrorException ex) {
+        return createErrorHandler(HttpStatus.BAD_GATEWAY, ex);
     }
 
     @ExceptionHandler(UserInternalServerErrorException.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     private ResponseEntity<Error> handleUserInternalServerErrorException(UserInternalServerErrorException ex) {
-        return createErrorHandler(HttpStatus.UNAUTHORIZED, ex);
+        return createErrorHandler(HttpStatus.BAD_GATEWAY, ex);
     }
 
-     */
 }

@@ -15,21 +15,21 @@ import static com.mindera.api.model.Error.createErrorHandler;
 public abstract class ExceptionsController {
 
     // Exception Handlers
-    @ExceptionHandler(ProductDoesNotExistsException.class)
+    @ExceptionHandler(PromotionDoesNotExistsException.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
-    private ResponseEntity<Error> handleProductDoesNotExistsException(ProductDoesNotExistsException ex) {
+    private ResponseEntity<Error> handlePromotionDoesNotExistsException(PromotionDoesNotExistsException ex) {
         return createErrorHandler(HttpStatus.NOT_FOUND, ex);
     }
 
-    @ExceptionHandler(ProductDuplicateException.class)
+    @ExceptionHandler(PromotionDuplicateException.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
-    private ResponseEntity<Error> handleProductDuplicateException(ProductDuplicateException ex) {
+    private ResponseEntity<Error> handlePromotionDuplicateException(PromotionDuplicateException ex) {
         return createErrorHandler(HttpStatus.CONFLICT, ex);
     }
 
-    @ExceptionHandler(ProductNotNullPropertyException.class)
+    @ExceptionHandler(PromotionNotNullPropertyException.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
-    private ResponseEntity<Error> handleProductNotNullPropertyException(ProductNotNullPropertyException ex) {
+    private ResponseEntity<Error> handlePromotionNotNullPropertyException(PromotionNotNullPropertyException ex) {
         return createErrorHandler(HttpStatus.PRECONDITION_REQUIRED, ex);
     }
 
