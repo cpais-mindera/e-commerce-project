@@ -10,7 +10,3 @@ public class PromotionApplication {
 		SpringApplication.run(PromotionApplication.class, args);
 	}
 }
-
-/*
-// stripe method payments
-*/

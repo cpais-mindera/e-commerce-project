@@ -13,7 +13,7 @@ import static com.mindera.api.model.Error.createErrorHandler;
 
 @RestController
 @ControllerAdvice
-public abstract class ExceptionsController {
+public abstract class BaseController {
 
     // Exception Handlers
     @ExceptionHandler(CartDoesNotExistsException.class)

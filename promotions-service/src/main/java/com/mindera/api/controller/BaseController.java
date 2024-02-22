@@ -8,11 +8,7 @@ import org.springframework.web.bind.annotation.*;
 
 import static com.mindera.api.model.Error.createErrorHandler;
 
-
-@RestController
-@ControllerAdvice
-@RequestMapping("/products")
-public abstract class ExceptionsController {
+public abstract class BaseController {
 
     // Exception Handlers
     @ExceptionHandler(PromotionDoesNotExistsException.class)

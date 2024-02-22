@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 
 import static com.mindera.api.model.Error.createErrorHandler;
 
-public abstract class ExceptionController {
+public abstract class BaseController {
 
     // Exception Handlers
     @ExceptionHandler(InvalidHeaderAuthorizationException.class)
