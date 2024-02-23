@@ -1,11 +1,15 @@
 package com.mindera.api.service;
 
-import com.mindera.api.domain.*;
+import com.mindera.api.domain.Role;
+import com.mindera.api.domain.User;
 import com.mindera.api.enums.Gender;
 import com.mindera.api.enums.UserStatus;
 import com.mindera.api.exception.*;
+import com.mindera.api.model.UserDTO;
 import com.mindera.api.repository.UserRepository;
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.hibernate.PropertyValueException;
 import org.hibernate.exception.ConstraintViolationException;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -14,55 +18,53 @@ import org.springframework.stereotype.Service;
 import java.util.Base64;
 import java.util.List;
 
+import static com.mindera.api.model.UserDTO.mapUserListToUserDTOList;
+
 @Service
 @RequiredArgsConstructor
+@Slf4j
+@Getter
 public class UserService {
 
     private final UserRepository userRepository;
-    
-    public Role getUserRole(String authorization) {
+
+    public UserDTO getUserById(String authorization, Long id) {
         if (isAdminUser(authorization)) {
-            String[] parts = getAuthorizationParts(authorization);
-            return userRepository.findByUsernameAndPassword(parts[0], parts[1]).orElseThrow(UserDoesNotExistsException::new).getRole();
+            User user = userRepository.findById(id).orElseThrow(() -> new UserDoesNotExistsException(id));
+            return new UserDTO(user);
         }
         throw new UserDoesNotHavePermissionsException();
     }
 
-    public User getUserLogin(String authorization) {
-        String[] parts = getAuthorizationParts(authorization);
-        return userRepository.findByUsernameAndPassword(parts[0], parts[1]).orElseThrow(UserDoesNotExistsException::new);
-    }
-
-    public User getUserById(String authorization, Long id) {
-        if (isAdminUser(authorization)) {
-            return userRepository.findById(id).orElseThrow(() -> new UserDoesNotExistsException(id));
-        }
-        throw new UserDoesNotHavePermissionsException();
-    }
-
-    public List<User> getAllUsers(String authorization, String gender) {
+    public List<UserDTO> getAllUsers(String authorization, String gender) {
         if (isAdminUser(authorization)) {
             if (gender != null) {
-                return userRepository.findAllByGender(Gender.valueOf(gender));
+                log.info("Getting All Users By Gender: ", gender);
+                List<User> userList = userRepository.findAllByGender(Gender.valueOf(gender));
+                return mapUserListToUserDTOList(userList);
             }
-            return userRepository.findAll();
+            log.info("Getting All Users");
+            return mapUserListToUserDTOList(userRepository.findAll());
         }
         throw new UserDoesNotHavePermissionsException();
     }
 
-    public User addUser(User user) {
+    public UserDTO addUser(User user) {
         try {
             user.setStatus(UserStatus.ACTIVE);
+            log.info("Create new User: ", user.toString());
             userRepository.save(user);
         } catch (DataIntegrityViolationException ex) {
+            log.error("Failed to store in database");
             throwDataIntegrityException(ex);
         }
-        return user;
+        return new UserDTO(user);
     }
 
-    public User updateUser(String authorization, Long id, User user) {
+    public UserDTO updateUser(String authorization, Long id, User user) {
         boolean sameUser = isSameAuthorizationUser(authorization, id);
         if (sameUser) {
+            log.info("Updating User details");
             var updateUser = User.builder()
                     .id(id)
                     .username(user.getUsername())
@@ -73,26 +75,28 @@ public class UserService {
                     .paymentMethods(user.getPaymentMethods())
                     .password(user.getPassword())
                     .role(user.getRole())
-                    .status(user.getStatus())
+                    .status(UserStatus.ACTIVE)
                     .build();
             try {
                 userRepository.save(updateUser);
+                return new UserDTO(updateUser);
             } catch (DataIntegrityViolationException ex) {
+                log.error("Failed to store in database", ex.getMessage());
                 throwDataIntegrityException(ex);
             }
         }
         throw new UserDoesNotHavePermissionsException();
     }
 
-    public User patchUser(String authorization, Long id, User user) {
+    public UserDTO patchUser(String authorization, Long id, User user) {
         boolean sameUser = isSameAuthorizationUser(authorization, id);
         if (sameUser) {
-            // that throw will never reach because if the user does not exists we will throw error in isSameAuthorizationUser
             User userDatabase = userRepository.findById(id).orElseThrow(() -> new UserDoesNotExistsException(id));
             userDatabase = User.patchUser(user, userDatabase);
 
             try {
                 userRepository.save(userDatabase);
+                return new UserDTO(userDatabase);
             } catch (DataIntegrityViolationException ex) {
                 throwDataIntegrityException(ex);
             }
@@ -100,15 +104,32 @@ public class UserService {
         throw new UserDoesNotHavePermissionsException();
     }
 
-    public User patchUserStatus(String authorization, Long id) {
+    public UserDTO disableUser(String authorization, Long id) {
         boolean sameUser = isSameAuthorizationUser(authorization, id);
         if (sameUser) {
-            // that throw will never reach because if the user does not exists we will throw error in isSameAuthorizationUser
             User userDatabase = userRepository.findById(id).orElseThrow(() -> new UserDoesNotExistsException(id));
             userDatabase.setStatus(UserStatus.INACTIVE);
+            log.info("User switch to INACTIVE", id);
+            try {
+                userRepository.save(userDatabase);
+                return new UserDTO(userDatabase);
+            } catch (DataIntegrityViolationException ex) {
+                throwDataIntegrityException(ex);
+            }
+        }
+        throw new UserDoesNotHavePermissionsException();
+    }
+
+    public UserDTO enableUser(String authorization, Long id) {
+        boolean sameUser = isSameAuthorizationUser(authorization, id);
+        if (sameUser) {
+            User userDatabase = userRepository.findById(id).orElseThrow(() -> new UserDoesNotExistsException(id));
+            userDatabase.setStatus(UserStatus.ACTIVE);
+            log.info("User switch to ACTIVE", id);
 
             try {
                 userRepository.save(userDatabase);
+                return new UserDTO(userDatabase);
             } catch (DataIntegrityViolationException ex) {
                 throwDataIntegrityException(ex);
             }
@@ -149,7 +170,7 @@ public class UserService {
                 .getRole().equals(Role.ADMIN);
     }
 
-    private String[] getAuthorizationParts(String authorization) {
+    protected String[] getAuthorizationParts(String authorization) {
         String base64Credentials = authorization.substring(6).trim();
         String credentials = new String(Base64.getDecoder().decode(base64Credentials));
         return credentials.split(":");

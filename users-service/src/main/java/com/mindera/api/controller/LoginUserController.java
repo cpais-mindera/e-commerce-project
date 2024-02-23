@@ -1,21 +1,24 @@
 package com.mindera.api.controller;
 
-import com.mindera.api.domain.User;
-import com.mindera.api.service.UserService;
+import com.mindera.api.model.UserDTO;
+import com.mindera.api.service.LoginUserService;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.*;
 
-public class LoginUserController extends UserController {
+@RestController
+@ControllerAdvice
+@RequestMapping("/users")
+public class LoginUserController extends BaseController {
 
-    private UserService userService;
+    private LoginUserService loginUserService;
 
-    public LoginUserController(UserService userService) {
-        super(userService);
+    public LoginUserController(LoginUserService loginUserService) {
+        this.loginUserService = loginUserService;
     }
 
+    // Postman
     @GetMapping("/login")
-    public ResponseEntity<User> getUserLogin(@RequestHeader("Authorization") String authorization) {
-        return ResponseEntity.ok().body(userService.getUserLogin(authorization));
+    public ResponseEntity<UserDTO> getUserLogin(@RequestHeader("Authorization") String authorization) {
+        return ResponseEntity.ok().body(loginUserService.getUserLogin(authorization));
     }
 }

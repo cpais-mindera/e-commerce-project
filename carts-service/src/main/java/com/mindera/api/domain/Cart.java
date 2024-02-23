@@ -4,7 +4,6 @@ import jakarta.persistence.*;
 import lombok.*;
 import org.springframework.data.annotation.CreatedDate;
 
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
@@ -26,14 +25,17 @@ public class Cart {
     @Embedded
     private Address address;
 
-    @OneToMany(mappedBy = "cart", cascade = CascadeType.ALL)
-    private List<Product> productList;
+    @OneToOne(mappedBy = "cart")
+    private List<CartProducts> cartProducts;
 
     @Embedded
     private PaymentMethod paymentMethod;
 
     @Column
     private Long userId;
+
+    @Column
+    private Long discountId;
 
     @Column
     @CreatedDate
