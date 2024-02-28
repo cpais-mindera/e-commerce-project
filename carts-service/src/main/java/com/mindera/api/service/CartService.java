@@ -2,15 +2,17 @@ package com.mindera.api.service;
 
 import com.mindera.api.domain.Address;
 import com.mindera.api.domain.Cart;
-import com.mindera.api.domain.CartProducts;
+import com.mindera.api.domain.CartProduct;
 import com.mindera.api.domain.PaymentMethod;
-import com.mindera.api.domain.Product;
 import com.mindera.api.exception.*;
-import com.mindera.api.message.PaymentMessage;
-import com.mindera.api.message.PaymentMessageSender;
-import com.mindera.api.model.CartDTO;
-import com.mindera.api.model.ProductDTO;
-import com.mindera.api.model.UserDTO;
+import com.mindera.api.message.*;
+import com.mindera.api.message.model.PaymentResponseMessage;
+import com.mindera.api.model.*;
+import com.mindera.api.model.requests.DiscountRequest;
+import com.mindera.api.model.requests.PaymentMethodRequest;
+import com.mindera.api.model.requests.ProductRequest;
+import com.mindera.api.model.responses.CartFullResponse;
+import com.mindera.api.model.responses.CartResponse;
 import com.mindera.api.repository.CartProductsRepository;
 import com.mindera.api.repository.CartRepository;
 import lombok.RequiredArgsConstructor;
@@ -18,17 +20,12 @@ import lombok.extern.slf4j.Slf4j;
 import org.hibernate.PropertyValueException;
 import org.hibernate.exception.ConstraintViolationException;
 import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
 
-import java.util.ArrayList;
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -37,22 +34,37 @@ public class CartService {
 
     private final CartRepository cartRepository;
     private final CartProductsRepository cartProductsRepository;
-    private final RestTemplate restTemplate;
-    private final PaymentMessageSender paymentMessageSender;
+    private final PaymentRequestAndReceive paymentRequestAndReceive;
+    private final UserRequestAndReceive userRequestAndReceive;
+    private final ProductRequestAndReceive productRequestAndReceive;
+    private final DiscountRequestAndReceive discountRequestAndReceive;
 
-    public CartDTO createCart(String authorization) {
-        HttpHeaders httpHeaders = new HttpHeaders();
-        httpHeaders.add("Authorization", authorization);
-        HttpEntity<Object> httpEntity = new HttpEntity<>(httpHeaders);
+    public CartFullResponse getCart(String authorization) {
+        UserDTO user = getUser(authorization);
 
-        ResponseEntity<UserDTO> user = restTemplate.exchange("http://localhost:8081/users/login", HttpMethod.GET, httpEntity, UserDTO.class);
-        if (user.getBody() == null) {
-            throw new UserInternalServerErrorException();
+        Cart cart = cartRepository.findByUserId(user.getId()).orElseThrow(() -> new CartDoesNotExistsException(user.getId()));
+        List<ProductDTO> productList = cart.getCartProducts().stream()
+                .map(product1 -> getProduct(product1.getProductId()))
+                .toList();
+
+        DiscountDTO discount = getDiscount(cart.getDiscountId());
+
+        return new CartFullResponse(cart, productList, user, discount);
+    }
+
+    public CartResponse createCart(String authorization) {
+        var user = getUser(authorization);
+        if (userAlreadyHaveCart(user)) {
+            throw new CartAlreadyExistsForUserException(user.getId());
         }
         try {
-            Cart cart = Cart.builder().userId(user.getBody().getId()).build();
+            Cart cart = Cart.builder()
+                    .userId(user.getId())
+                    .createdAt(LocalDateTime.now())
+                    .lastModifiedAt(LocalDateTime.now())
+                    .build();
             cartRepository.save(cart);
-            return new CartDTO(cart);
+            return new CartResponse(cart);
         } catch (DataIntegrityViolationException ex) {
             switch(ex.getCause()) {
                 case ConstraintViolationException constraintEx -> {
@@ -68,155 +80,160 @@ public class CartService {
         }
     }
 
-    public CartDTO addProduct(String authorization, UUID productId, UUID cartId) {
-        HttpHeaders httpHeaders = new HttpHeaders();
-        httpHeaders.add("Authorization", authorization);
-        HttpEntity<Object> httpEntity = new HttpEntity<>(httpHeaders);
+    public CartResponse addProduct(String authorization, ProductRequest product, UUID cartId) {
+        UserDTO userResponse = getUser(authorization);
+        Cart cart = cartRepository.findByUserIdAndId(userResponse.getId(), cartId)
+                .orElseThrow(() -> new CartDoesNotExistsException(userResponse.getId()));
 
-        ResponseEntity<UserDTO> user = restTemplate.exchange("http://localhost:8081/users/login", HttpMethod.GET, httpEntity, UserDTO.class);
-        if (user.getBody() == null) {
-            throw new UserInternalServerErrorException();
+
+        Optional<CartProduct> optionalCartProduct = cartProductsRepository.findByCartIdAndProductId(cartId, product.getProductId());
+
+        // Add the CartItem to the Cart's cartItems list
+        if (optionalCartProduct.isEmpty()) {
+            // Create a new CartItem
+            CartProduct cartProduct = CartProduct.builder()
+                    .cart(cart)
+                    .productId(product.getProductId())
+                    .quantity(product.getQuantity())
+                    .build();
+            cart.getCartProducts().add(cartProduct);
+        } else {
+            CartProduct cartProduct = optionalCartProduct.get();
+            cartProduct.setQuantity(cartProduct.getQuantity() + product.getQuantity());
+            cart.getCartProducts().add(cartProduct);
         }
-        var cart = cartRepository.findById(cartId).orElseThrow(() -> new CartDoesNotExistsException(cartId));
 
         try {
-            ResponseEntity<ProductDTO> productResponse = restTemplate.exchange("http://localhost:8082/products/" + productId, HttpMethod.GET, httpEntity, ProductDTO.class);
-            if (productResponse.getBody() == null) {
-                throw new ProductsInternalServerErrorException();
-            }
-
-            if (cart.getCartProducts().isEmpty()) {
-                List<UUID> productListIds = new ArrayList<>();
-                productListIds.add(productId);
-                cartProductsRepository.save(CartProducts.builder().cartId(cartId).productListIds(productListIds).build());
-            } else {
-                CartProducts cartProducts = cartProductsRepository.findByCartId(cartId);
-                cartProducts.getProductListIds().add(productId);
-                cartProductsRepository.save(cartProducts);
-            }
-
             cartRepository.save(cart);
+        } catch (DataIntegrityViolationException ex) {
+            switch(ex.getCause()) {
+                case ConstraintViolationException constraintEx -> {
+                    String constraintName = constraintEx.getConstraintName();
+                    throw new CartDuplicateException(constraintName);
+                }
+                case PropertyValueException propertyEx -> {
+                    String nullableValue = propertyEx.getPropertyName();
+                    throw new CartNotNullPropertyException(nullableValue);
+                }
+                default -> throw ex;
+            }
+        }
+        return  new CartResponse(cart);
+    }
+
+    public CartResponse removeProduct(String authorization, ProductRequest product, UUID cartId) {
+        var userResponse = getUser(authorization);
+        Cart cart = cartRepository.findByUserIdAndId(userResponse.getId(), cartId)
+                .orElseThrow(() -> new CartDoesNotExistsException(userResponse.getId()));
+
+        CartProduct cartProduct = cartProductsRepository.findByCartIdAndProductId(cartId, product.getProductId())
+                .orElseThrow(() -> new ProductDoesNotExistsInCartException(product.getProductId(), cartId));
+
+        cartProduct.setQuantity(cartProduct.getQuantity() - product.getQuantity());
+
+        try {
+            if (cartProduct.getQuantity() == 0) {
+                cartProductsRepository.delete(cartProduct);
+            } else {
+                cartProductsRepository.save(cartProduct);
+            }
+            // cartRepository.save(cart);
         } catch (Exception ex) {
             log.error("Error setting product inside cart: " + cart);
         }
-        return new CartDTO(cart);
+        return new CartResponse(cart);
     }
 
-    public CartDTO addAddress(String authorization, Address address, UUID cartId) {
-        HttpHeaders httpHeaders = new HttpHeaders();
-        httpHeaders.add("Authorization", authorization);
-        HttpEntity<Object> httpEntity = new HttpEntity<>(httpHeaders);
+    public CartResponse updateAddress(String authorization, Address address, UUID cartId) {
+        var userResponse = getUser(authorization);
+        Cart cart = cartRepository.findByUserIdAndId(userResponse.getId(), cartId)
+                .orElseThrow(() -> new CartDoesNotExistsException(userResponse.getId()));
 
-        ResponseEntity<UserDTO> user = restTemplate.exchange("http://localhost:8081/users/login", HttpMethod.GET, httpEntity, UserDTO.class);
-        if (user.getBody() == null) {
-            throw new UserInternalServerErrorException();
-        }
-        var cart = cartRepository.findById(cartId).orElseThrow(() -> new CartDoesNotExistsException(cartId));
         try {
             cart.setAddress(address);
             cartRepository.save(cart);
         } catch (Exception ex) {
             log.error("Error setting address inside cart: " + cart);
         }
-        return new CartDTO(cart);
+        return new CartResponse(cart);
     }
 
-    public CartDTO addPayment(String authorization, PaymentMethod paymentMethod, UUID cartId) {
-        HttpHeaders httpHeaders = new HttpHeaders();
-        httpHeaders.add("Authorization", authorization);
-        HttpEntity<Object> httpEntity = new HttpEntity<>(httpHeaders);
+    public CartResponse updateDiscount(String authorization, DiscountRequest discount, UUID cartId) {
+        var userResponse = getUser(authorization);
+        Cart cart = cartRepository.findByUserIdAndId(userResponse.getId(), cartId)
+                .orElseThrow(() -> new CartDoesNotExistsException(userResponse.getId()));
 
-        ResponseEntity<UserDTO> user = restTemplate.exchange("http://localhost:8081/users/login", HttpMethod.GET, httpEntity, UserDTO.class);
-        if (user.getBody() == null) {
-            throw new UserInternalServerErrorException();
+        try {
+            cart.setDiscountId(discount.getDiscountId());
+            cartRepository.save(cart);
+        } catch (Exception ex) {
+            log.error("Error setting discount inside cart: " + cart);
+        }
+        return new CartResponse(cart);
+    }
+
+    public CartResponse addPayment(String authorization, PaymentMethodRequest paymentMethod, UUID cartId) {
+        var userResponse = getUser(authorization);
+        Cart cart = cartRepository.findByUserIdAndId(userResponse.getId(), cartId)
+                .orElseThrow(() -> new CartDoesNotExistsException(userResponse.getId()));
+
+        double totalPrice;
+        if (!cart.getCartProducts().isEmpty() && cart.getAddress() != null) {
+            if (cart.getDiscountId() != null ) {
+                totalPrice = cart.getCartProducts().stream()
+                        .mapToDouble(product -> {
+                            double defaultPrice = getProduct(product.getProductId()).getDefaultPrice();
+                            DiscountDTO discountDTO = getDiscount(cart.getDiscountId());
+                            double discount = discountDTO.getDiscount();
+                            return defaultPrice * (1 - discount);
+                        })
+                        .sum();
+            } else {
+                totalPrice = cart.getCartProducts().stream()
+                        .mapToDouble(product -> getProduct(product.getProductId()).getDefaultPrice()).sum();
+            }
+        } else {
+            throw new NeedToHaveProductsOrAddressInYourCartException();
         }
 
-        var cart = cartRepository.findById(cartId).orElseThrow(() -> new CartDoesNotExistsException(cartId));
+        PaymentResponseMessage paymentResponseMessage = paymentRequestAndReceive.sendRequestAndReceiveResponse(paymentMethod, totalPrice, cart.getId());
 
-        // Send Message sync through payment service
-        PaymentMessage paymentMessage = new PaymentMessage();
-        paymentMessage.setEventType("ADD_PAYMENT");
-        paymentMessage.setCvv(paymentMethod.getCvv());
-        paymentMessage.setCardNumber(paymentMethod.getCardNumber());
-        paymentMessage.setAmount(cart.getTotalPrice());
-        paymentMessage.setExpireDate(paymentMethod.getExpireDate());
-        paymentMessage.setCardHolderName(paymentMethod.getCardHolderName());
-        paymentMessageSender.send(paymentMessage);
-
-
-        log.info("Payment Message sent to QUEUE " + paymentMessage.toString());
-
-        // add Payment to Cart
         try {
-            cart.setPaymentMethod(paymentMethod);
+            PaymentMethod paymentMethod1 = new PaymentMethod(paymentResponseMessage);
+            cart.setPaymentMethod(paymentMethod1);
             cartRepository.save(cart);
         } catch (Exception ex) {
             log.error("Error setting address inside cart: " + cart);
         }
-        return new CartDTO(cart);
+        return new CartResponse(cart);
     }
 
-    public CartDTO removeProduct(String authorization, UUID productId, UUID cartId) {
-        HttpHeaders httpHeaders = new HttpHeaders();
-        httpHeaders.add("Authorization", authorization);
-        HttpEntity<Object> httpEntity = new HttpEntity<>(httpHeaders);
-
-        ResponseEntity<UserDTO> user = restTemplate.exchange("http://localhost:8081/users/login", HttpMethod.GET, httpEntity, UserDTO.class);
-        if (user.getBody() == null) {
-            throw new UserInternalServerErrorException();
-        }
-        var cart = cartRepository.findById(cartId).orElseThrow(() -> new CartDoesNotExistsException(cartId));
-
-        try {
-            /* TODO update Price
-            List<Product> updatedProductList = cart.getProductList().stream().filter((product) -> !product.getId().equals(productId)).collect(Collectors.toList());
-            cart.setProductList(updatedProductList);
-
-            double totalPrice = cart.getProductList().stream().mapToDouble(product1 -> product1.getDefaultPrice() - product1.getDiscountedPrice()).sum();
-            cart.setTotalPrice(totalPrice);
-             */
-
-            cartRepository.save(cart);
-        } catch (Exception ex) {
-            log.error("Error setting product inside cart: " + cart);
-        }
-        return new CartDTO(cart);
+    private boolean userAlreadyHaveCart(UserDTO userDTO) {
+        return cartRepository.findByUserId(userDTO.getId()).isPresent();
     }
 
-    public CartDTO addDiscount(String authorization, Long discountId, UUID cartId) {
-        HttpHeaders httpHeaders = new HttpHeaders();
-        httpHeaders.add("Authorization", authorization);
-        HttpEntity<Object> httpEntity = new HttpEntity<>(httpHeaders);
-
-        ResponseEntity<UserDTO> user = restTemplate.exchange("http://localhost:8081/users/login", HttpMethod.GET, httpEntity, UserDTO.class);
-        if (user.getBody() == null) {
+    private UserDTO getUser(String authorization) {
+        try {
+            return userRequestAndReceive.sendRequestAndReceiveResponse(authorization);
+        } catch (Exception ex) {
             throw new UserInternalServerErrorException();
         }
-        var cart = cartRepository.findById(cartId).orElseThrow(() -> new CartDoesNotExistsException(cartId));
-        /* TODO Add discount
+    }
+
+    private ProductDTO getProduct(UUID productId) {
         try {
-            ResponseEntity<ProductDTO> productResponse = restTemplate.exchange("http://localhost:8082/products/" + productId, HttpMethod.GET, httpEntity, ProductDTO.class);
-            if (productResponse.getBody() == null) {
-                throw new ProductsInternalServerErrorException();
-            }
-
-            if (cart.getCartProducts().isEmpty()) {
-                List<UUID> productListIds = new ArrayList<>();
-                productListIds.add(productId);
-                cartProductsRepository.save(CartProducts.builder().cartId(cartId).productListIds(productListIds).build());
-            } else {
-                CartProducts cartProducts = cartProductsRepository.findByCartId(cartId);
-                cartProducts.getProductListIds().add(productId);
-                cartProductsRepository.save(cartProducts);
-            }
-
-            cartRepository.save(cart);
+            return productRequestAndReceive.sendRequestAndReceiveResponse(productId);
         } catch (Exception ex) {
-            log.error("Error setting product inside cart: " + cart);
+            throw new ProductsInternalServerErrorException();
         }
-        return new CartDTO(cart);
-        */
-        return new CartDTO(cart);
+    }
+
+    private DiscountDTO getDiscount(Long discountId) {
+        try {
+            return discountRequestAndReceive.sendRequestAndReceiveResponse(discountId);
+        } catch (Exception ex) {
+            throw new DiscountsInternalServerErrorException();
+        }
     }
 
 

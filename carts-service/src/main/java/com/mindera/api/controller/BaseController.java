@@ -46,4 +46,9 @@ public abstract class BaseController {
         return createErrorHandler(HttpStatus.BAD_GATEWAY, ex);
     }
 
+    @ExceptionHandler(CartAlreadyExistsForUserException.class)
+    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+    private ResponseEntity<Error> handleCartAlreadyExistsForUserException(CartAlreadyExistsForUserException ex) {
+        return createErrorHandler(HttpStatus.CONFLICT, ex);
+    }
 }

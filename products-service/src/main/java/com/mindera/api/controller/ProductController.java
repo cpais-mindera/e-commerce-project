@@ -1,7 +1,11 @@
 package com.mindera.api.controller;
 
 import com.mindera.api.domain.Product;
+import com.mindera.api.model.ProductDTO;
+import com.mindera.api.model.ProductSimplifiedDTO;
 import com.mindera.api.service.ProductService;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -19,30 +23,39 @@ public class ProductController extends ExceptionsController {
         this.productService = productService;
     }
 
+    // Postman
     @GetMapping("/{uuid}")
-    public ResponseEntity<Product> getProduct(@PathVariable UUID uuid) {
+    public ResponseEntity<ProductDTO> getProduct(@PathVariable UUID uuid) {
         return ResponseEntity.ok().body(productService.getProduct(uuid));
     }
 
+    // Postman
     @GetMapping
-    public ResponseEntity<List<Product>> getAllProductsSimplified(@PathVariable String category) {
+    public ResponseEntity<List<ProductSimplifiedDTO>> getAllProductsSimplified(@RequestParam(required = false) String category) {
         return ResponseEntity.ok().body(productService.getAllProductsSimplified(category));
     }
 
+    // Postman
     @PostMapping
-    public ResponseEntity<Product> addProduct(@RequestHeader("Authorization") String authorization, @RequestBody Product product) {
+    public ResponseEntity<ProductDTO> addProduct(@RequestHeader("Authorization") String authorization, @RequestBody Product product) {
         return ResponseEntity.ok().body(productService.addProduct(authorization, product));
     }
 
+    // Postman
     @PutMapping("/{uuid}")
-    public ResponseEntity<Product> updateProduct(@RequestHeader("Authorization") String authorization, @RequestBody Product product, @PathVariable UUID uuid) {
+    public ResponseEntity<ProductDTO> updateProduct(@RequestHeader("Authorization") String authorization, @RequestBody Product product, @PathVariable UUID uuid) {
         return ResponseEntity.ok().body(productService.updateProduct(authorization, product, uuid));
     }
 
+    // Postman
     @PatchMapping("/{uuid}")
-    public ResponseEntity<Product> patchProduct(@RequestHeader("Authorization") String authorization, @RequestBody Product product, @PathVariable UUID uuid) {
+    public ResponseEntity<ProductDTO> patchProduct(@RequestHeader("Authorization") String authorization, @RequestBody Product product, @PathVariable UUID uuid) {
         return ResponseEntity.ok().body(productService.patchProduct(authorization, product, uuid));
     }
 
-    // TODO Disable
+    // Postman
+    @PatchMapping("/{uuid}/disable")
+    public ResponseEntity<ProductDTO> disableProduct(@RequestHeader("Authorization") String authorization, @PathVariable UUID uuid) {
+        return ResponseEntity.ok().body(productService.disableProduct(authorization, uuid));
+    }
 }

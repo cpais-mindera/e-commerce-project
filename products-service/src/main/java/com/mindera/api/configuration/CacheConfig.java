@@ -23,7 +23,7 @@ public class CacheConfig {
     @Bean
     public RedisCacheManagerBuilderCustomizer redisCacheManagerBuilderCustomizer() {
         return (builder) -> builder
-                .withCacheConfiguration("users",
+                .withCacheConfiguration("products",
                         RedisCacheConfiguration.defaultCacheConfig()
                                 .entryTtl(Duration.ofMillis(redisTtl))
                                 .disableCachingNullValues()

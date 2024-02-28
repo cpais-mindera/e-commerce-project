@@ -1,7 +1,9 @@
 package com.mindera.api.domain;
 
 import com.mindera.api.enums.Category;
+import com.mindera.api.enums.ProductStatus;
 import com.mindera.api.enums.Size;
+import com.mindera.api.model.ProductDTO;
 import jakarta.persistence.*;
 import lombok.*;
 import java.util.UUID;
@@ -23,8 +25,6 @@ public class Product {
     private String description;
     @Column(nullable = false)
     private Double defaultPrice;
-    @Column
-    private Double discountedPrice;
     @Column(unique = true)
     private String name;
     @Column(nullable = false)
@@ -36,16 +36,19 @@ public class Product {
     @Column
     @Enumerated(EnumType.STRING)
     private Category category;
+    @Column
+    private ProductStatus productStatus;
 
-    public Product(String description, Double defaultPrice, Double discountedPrice, String name, String colour, Size size, Integer stock, Category category) {
+    public Product(String description, Double defaultPrice, String name,
+                   String colour, Size size, Integer stock, Category category, ProductStatus productStatus) {
         this.description = description;
         this.defaultPrice = defaultPrice;
-        this.discountedPrice = discountedPrice;
         this.name = name;
         this.colour = colour;
         this.size = size;
         this.stock = stock;
         this.category = category;
+        this.productStatus = productStatus;
     }
 
     public Product(String description, Double defaultPrice, String name) {
@@ -61,10 +64,6 @@ public class Product {
 
         if (product.getDefaultPrice() != null) {
             productDatabase.setDefaultPrice(product.getDefaultPrice());
-        }
-
-        if (product.getDiscountedPrice() != null) {
-            productDatabase.setDiscountedPrice(product.getDiscountedPrice());
         }
 
         if (product.getName() != null) {

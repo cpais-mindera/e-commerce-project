@@ -12,6 +12,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.hibernate.PropertyValueException;
 import org.hibernate.exception.ConstraintViolationException;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 
@@ -28,6 +30,7 @@ public class UserService {
 
     private final UserRepository userRepository;
 
+    @Cacheable("users")
     public UserDTO getUserById(String authorization, Long id) {
         if (isAdminUser(authorization)) {
             User user = userRepository.findById(id).orElseThrow(() -> new UserDoesNotExistsException(id));
@@ -36,6 +39,7 @@ public class UserService {
         throw new UserDoesNotHavePermissionsException();
     }
 
+    @Cacheable("users")
     public List<UserDTO> getAllUsers(String authorization, String gender) {
         if (isAdminUser(authorization)) {
             if (gender != null) {
@@ -49,6 +53,7 @@ public class UserService {
         throw new UserDoesNotHavePermissionsException();
     }
 
+    @CacheEvict("users")
     public UserDTO addUser(User user) {
         try {
             user.setStatus(UserStatus.ACTIVE);
@@ -61,6 +66,7 @@ public class UserService {
         return new UserDTO(user);
     }
 
+    @CacheEvict("users")
     public UserDTO updateUser(String authorization, Long id, User user) {
         boolean sameUser = isSameAuthorizationUser(authorization, id);
         if (sameUser) {
@@ -88,6 +94,7 @@ public class UserService {
         throw new UserDoesNotHavePermissionsException();
     }
 
+    @CacheEvict("users")
     public UserDTO patchUser(String authorization, Long id, User user) {
         boolean sameUser = isSameAuthorizationUser(authorization, id);
         if (sameUser) {
@@ -104,6 +111,7 @@ public class UserService {
         throw new UserDoesNotHavePermissionsException();
     }
 
+    @CacheEvict("users")
     public UserDTO disableUser(String authorization, Long id) {
         boolean sameUser = isSameAuthorizationUser(authorization, id);
         if (sameUser) {
@@ -120,6 +128,7 @@ public class UserService {
         throw new UserDoesNotHavePermissionsException();
     }
 
+    @CacheEvict("users")
     public UserDTO enableUser(String authorization, Long id) {
         boolean sameUser = isSameAuthorizationUser(authorization, id);
         if (sameUser) {

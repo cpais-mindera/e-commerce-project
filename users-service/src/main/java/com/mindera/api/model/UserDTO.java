@@ -1,5 +1,6 @@
 package com.mindera.api.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.mindera.api.domain.Contacts;
 import com.mindera.api.domain.Role;
 import com.mindera.api.domain.User;
@@ -14,6 +15,7 @@ import java.util.List;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class UserDTO {
 
     private Long id;

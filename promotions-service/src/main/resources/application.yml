@@ -7,6 +7,12 @@ spring:
     show-sql: ${SQL_SHOW}
     hibernate:
       ddl-auto: ${DLL_AUTO}
+  data:
+    redis:
+      host: ${REDIS_HOST}
+      port: ${REDIS_PORT}
+      password: ${REDIS_PASS}
+      ttl: 60000
   rabbitmq: 
     host: ${RABBIT_HOST}
     port: ${RABBIT_PORT}
@@ -18,3 +24,7 @@ springdoc:
 
 server:
   port: 8083
+
+queues:
+  userListener: USER_LISTENER
+  discountListener: DISCOUNT_LISTENER

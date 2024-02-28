@@ -26,7 +26,6 @@ public class UserController extends BaseController {
     // GET_USER_BY_ID.mermaid
     // Postman
     @GetMapping("/{id}")
-    @Cacheable(value = "users")
     public ResponseEntity<UserDTO> getUserById(@RequestHeader("Authorization") String authorization, @PathVariable Long id) {
         return ResponseEntity.ok().body(userService.getUserById(authorization, id));
     }
@@ -34,7 +33,6 @@ public class UserController extends BaseController {
     // GET_ALL_USERS.mermaid
     // Postman
     @GetMapping
-    @Cacheable(value = "users")
     public ResponseEntity<List<UserDTO>> getAllUsers(@RequestHeader("Authorization") String authorization, @RequestParam(required = false) String gender) {
         return ResponseEntity.ok().body(userService.getAllUsers(authorization, gender));
     }
@@ -42,7 +40,6 @@ public class UserController extends BaseController {
     // CREATE_USER.mermaid
     // Postman
     @PostMapping
-    @CacheEvict(value = "users")
     public ResponseEntity<UserDTO> addUser(@RequestBody User user) {
         return ResponseEntity.status(HttpStatus.CREATED).body(userService.addUser(user));
     }

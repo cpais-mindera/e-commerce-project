@@ -24,3 +24,6 @@ springdoc:
 
 server:
   port: 8081
+
+queues:
+  userListener: USER_LISTENER

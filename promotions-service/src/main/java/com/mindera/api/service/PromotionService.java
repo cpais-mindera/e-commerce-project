@@ -1,22 +1,24 @@
 package com.mindera.api.service;
 
 import com.mindera.api.domain.*;
-import com.mindera.api.enums.EventType;
+import com.mindera.api.enums.Category;
 import com.mindera.api.enums.PromotionStatus;
+import com.mindera.api.enums.Role;
 import com.mindera.api.exception.*;
-import com.mindera.api.message.PromotionMessage;
-import com.mindera.api.message.PromotionMessageSender;
-import com.mindera.api.model.Role;
-import com.mindera.api.model.User;
+import com.mindera.api.message.UserRequestAndReceive;
+import com.mindera.api.model.PromotionDTO;
 import com.mindera.api.repository.PromotionRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.hibernate.PropertyValueException;
 import org.hibernate.exception.ConstraintViolationException;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.http.*;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
+
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -24,14 +26,20 @@ import org.springframework.web.client.RestTemplate;
 public class PromotionService {
 
     private final PromotionRepository promotionRepository;
-    private final RestTemplate restTemplate;
-    private PromotionMessageSender promotionMessageSender;
+    private final UserRequestAndReceive userRequestAndReceive;
 
-    public Promotion getPromotion(Long id) {
-        return promotionRepository.findById(id).orElseThrow(() -> new PromotionDoesNotExistsException(id));
+    @Cacheable("promotions")
+    public List<PromotionDTO> getAllPromotions(String authorization, String activeStatus) {
+        if (activeStatus != null) {
+            List<Promotion> products = promotionRepository.findAllByPromotionStatus(PromotionStatus.valueOf(activeStatus));
+            return products.stream().map(PromotionDTO::new).collect(Collectors.toList());
+        }
+        List<Promotion> products = promotionRepository.findAll();
+        return products.stream().map(PromotionDTO::new).collect(Collectors.toList());
     }
 
-    public Promotion addPromotion(String authorization, Promotion promotion) {
+    @CacheEvict("promotions")
+    public PromotionDTO addPromotion(String authorization, Promotion promotion) {
         if (isAdminUser(authorization)) {
             try {
                 if (promotion.getPromotionStatus() == null) {
@@ -39,18 +47,7 @@ public class PromotionService {
                 }
                 promotionRepository.save(promotion);
 
-                // Send message to RabbitMQ
-                PromotionMessage promotionMessage = new PromotionMessage();
-                promotionMessage.setEventType(EventType.ADD_PROMOTION);
-                promotionMessage.setName(promotion.getName());
-                promotionMessage.setCategory(promotion.getCategory());
-                promotionMessage.setDiscount(promotion.getDiscount());
-                promotionMessage.setProductId(promotion.getProductId());
-                promotionMessageSender.sendMessage(promotionMessage);
-
-                log.info(promotionMessage.toString());
-
-                return promotion;
+                return new PromotionDTO(promotion);
 
             } catch (DataIntegrityViolationException ex) {
                 switch(ex.getCause()) {
@@ -69,7 +66,8 @@ public class PromotionService {
         throw new UserDoesNotHavePermissionsException();
     }
 
-    public Promotion updatePromotion(String authorization, Promotion promotion, Long id) {
+    @CacheEvict("promotions")
+    public PromotionDTO updatePromotion(String authorization, Promotion promotion, Long id) {
         if (isAdminUser(authorization)) {
             try {
                 getPromotion(id);
@@ -85,7 +83,7 @@ public class PromotionService {
                         .build();
 
                 promotionRepository.save(updatedPromotion);
-                return updatedPromotion;
+                return new PromotionDTO(updatedPromotion);
             } catch (DataIntegrityViolationException ex) {
                 switch(ex.getCause()) {
                     case ConstraintViolationException constraintEx -> {
@@ -103,7 +101,8 @@ public class PromotionService {
         throw new UserDoesNotHavePermissionsException();
     }
 
-    public Promotion patchPromotion(String authorization, Promotion promotion, Long id) {
+    @CacheEvict("promotions")
+    public PromotionDTO patchPromotion(String authorization, Promotion promotion, Long id) {
         if (isAdminUser(authorization)) {
             try {
                 Promotion promotionDatabase = getPromotion(id);
@@ -112,7 +111,7 @@ public class PromotionService {
 
                 promotionRepository.save(promotionPatched);
 
-                return promotionDatabase;
+                return new PromotionDTO(promotionPatched);
             } catch (DataIntegrityViolationException ex) {
                 switch(ex.getCause()) {
                     case ConstraintViolationException constraintEx -> {
@@ -130,39 +129,16 @@ public class PromotionService {
         throw new UserDoesNotHavePermissionsException();
     }
 
-    public Void deletePromotion(String authorization, Long id) {
-        if (isAdminUser(authorization)) {
-            Promotion promotion = getPromotion(id);
-            promotionRepository.delete(promotion);
-        }
-        throw new UserDoesNotHavePermissionsException();
+    private Promotion getPromotion(Long id) {
+        return promotionRepository.findById(id).orElseThrow(() -> new PromotionDoesNotExistsException(id));
     }
-    /*
-
-
-    public List<Promotion> getAllProductsSimplified(String category) {
-        if (category != null) {
-            return productRepository.findAllByCategory(Category.valueOf(category));
-        }
-        return productRepository.findAll();
-    }
-
-
-
-
-    
-
-
-     */
 
     private boolean isAdminUser(String authorization) {
-        HttpHeaders httpHeaders = new HttpHeaders();
-        httpHeaders.add("Authorization", authorization);
-        HttpEntity<Object> httpEntity = new HttpEntity<>(httpHeaders);
-        ResponseEntity<User> user = restTemplate.exchange("http://localhost:8081/users/role", HttpMethod.GET, httpEntity, User.class);
-        if (user.getBody() == null) {
+        try {
+            var test = userRequestAndReceive.sendRequestAndReceiveResponse(authorization);
+            return test.getRole().equals(Role.ADMIN);
+        } catch (Exception ex) {
             throw new UserInternalServerErrorException();
         }
-        return user.getBody().getRole().equals(Role.ADMIN);
     }
 }

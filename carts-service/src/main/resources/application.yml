@@ -16,5 +16,11 @@ spring:
 springdoc:
   show-actuator: true
 
-queue:
-  payments: PAYMENTS
+server:
+  port: 8084
+
+queues:
+  userListener: USER_LISTENER
+  productListener: PRODUCT_LISTENER
+  discountListener: DISCOUNT_LISTENER
+  paymentListener: PAYMENT_LISTENER
