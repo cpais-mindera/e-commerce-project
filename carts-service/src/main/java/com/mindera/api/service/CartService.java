@@ -23,6 +23,7 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -40,17 +41,42 @@ public class CartService {
     private final ProductRequestAndReceive productRequestAndReceive;
     private final DiscountRequestAndReceive discountRequestAndReceive;
 
-    public CartFullResponse getCart(String authorization) {
+    public CartFullResponse getCart(String authorization, UUID cartId) {
         UserDTO user = getUser(authorization);
 
-        Cart cart = cartRepository.findByUserId(user.getId()).orElseThrow(() -> new CartDoesNotExistsException(user.getId()));
+        Cart cart = cartRepository.findByUserIdAndId(user.getId(), cartId).orElseThrow(() -> new CartDoesNotExistsException(user.getId()));
         List<ProductDTO> productList = cart.getCartProducts().stream()
-                .map(product1 -> getProduct(product1.getProductId()))
+                .map(product1 ->
+                        getProduct(product1.getProductId()))
                 .toList();
 
         DiscountDTO discount = getDiscount(cart.getDiscountId());
 
         return new CartFullResponse(cart, productList, user, discount);
+    }
+
+    public List<CartFullResponse> getAllCartsByUser(String authorization) {
+        UserDTO user = getUser(authorization);
+
+        List<Cart> cartList = cartRepository.findAllByUserId(user.getId());
+
+        List<CartFullResponse> cartFullResponseList = new ArrayList<>();
+        for (Cart cart: cartList) {
+            List<ProductDTO> productList = cart.getCartProducts().stream()
+                    .map(product1 -> {
+                        ProductDTO getProductDetails = getProduct(product1.getProductId());
+                        getProductDetails.setId(product1.getProductId());
+                        getProductDetails.setQuantity(product1.getQuantity());
+                        return getProductDetails;
+                    })
+                    .toList();
+
+            DiscountDTO discount = getDiscount(cart.getDiscountId());
+            CartFullResponse cartFullResponse = new CartFullResponse(cart, productList, user, discount);
+            cartFullResponseList.add(cartFullResponse);
+        }
+
+        return cartFullResponseList;
     }
 
     public CartResponse createCart(String authorization) {

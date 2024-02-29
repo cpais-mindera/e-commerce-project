@@ -15,7 +15,18 @@ import static com.mindera.api.model.Error.createErrorHandler;
 @ControllerAdvice
 public abstract class BaseController {
 
-    // Exception Handlers
+    @ExceptionHandler(CartAlreadyConvertedToOrderException.class)
+    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+    private ResponseEntity<Error> handleCartAlreadyConvertedToOrderException(CartAlreadyConvertedToOrderException ex) {
+        return createErrorHandler(HttpStatus.CONFLICT, ex);
+    }
+
+    @ExceptionHandler(CartAlreadyExistsForUserException.class)
+    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+    private ResponseEntity<Error> handleCartAlreadyExistsForUserException(CartAlreadyExistsForUserException ex) {
+        return createErrorHandler(HttpStatus.CONFLICT, ex);
+    }
+
     @ExceptionHandler(CartDoesNotExistsException.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     private ResponseEntity<Error> handleCartDoesNotExistsException(CartDoesNotExistsException ex) {
@@ -34,6 +45,30 @@ public abstract class BaseController {
         return createErrorHandler(HttpStatus.PRECONDITION_REQUIRED, ex);
     }
 
+    @ExceptionHandler(DiscountsInternalServerErrorException.class)
+    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+    private ResponseEntity<Error> handleDiscountsInternalServerErrorException(DiscountsInternalServerErrorException ex) {
+        return createErrorHandler(HttpStatus.BAD_GATEWAY, ex);
+    }
+
+    @ExceptionHandler(NeedToHaveProductsOrAddressInYourCartException.class)
+    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+    private ResponseEntity<Error> handleNeedToHaveProductsOrAddressInYourCartException(NeedToHaveProductsOrAddressInYourCartException ex) {
+        return createErrorHandler(HttpStatus.PRECONDITION_REQUIRED, ex);
+    }
+
+    @ExceptionHandler(PaymentsInternalServerErrorException.class)
+    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+    private ResponseEntity<Error> handlePaymentsInternalServerErrorException(PaymentsInternalServerErrorException ex) {
+        return createErrorHandler(HttpStatus.BAD_GATEWAY, ex);
+    }
+
+    @ExceptionHandler(ProductDoesNotExistsInCartException.class)
+    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+    private ResponseEntity<Error> handleProductDoesNotExistsInCartException(ProductDoesNotExistsInCartException ex) {
+        return createErrorHandler(HttpStatus.NOT_FOUND, ex);
+    }
+
     @ExceptionHandler(ProductsInternalServerErrorException.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     private ResponseEntity<Error> handleUserDoesNotHavePermissionsException(ProductsInternalServerErrorException ex) {
@@ -44,11 +79,5 @@ public abstract class BaseController {
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     private ResponseEntity<Error> handleUserInternalServerErrorException(UserInternalServerErrorException ex) {
         return createErrorHandler(HttpStatus.BAD_GATEWAY, ex);
-    }
-
-    @ExceptionHandler(CartAlreadyExistsForUserException.class)
-    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
-    private ResponseEntity<Error> handleCartAlreadyExistsForUserException(CartAlreadyExistsForUserException ex) {
-        return createErrorHandler(HttpStatus.CONFLICT, ex);
     }
 }

@@ -2,10 +2,7 @@ package com.mindera.api.service;
 
 import com.mindera.api.domain.Order;
 import com.mindera.api.enums.Status;
-import com.mindera.api.exception.CartDoesNotExistsException;
-import com.mindera.api.exception.OrderDoesNotExistsException;
-import com.mindera.api.exception.OrderDuplicateException;
-import com.mindera.api.exception.OrderNotNullPropertyException;
+import com.mindera.api.exception.*;
 import com.mindera.api.message.UserRequestAndReceive;
 import com.mindera.api.model.response.OrderResponse;
 import com.mindera.api.repository.OrderRepository;
@@ -38,6 +35,10 @@ public class OrderService {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new OrderDoesNotExistsException(orderId));
 
+        if (!order.getOrderStatus().equals(Status.ONGOING)) {
+            throw new OrderCantSwitchToThatOrderStatus(orderId, order.getOrderStatus(), Status.SHIPPED);
+        }
+
         try {
             order.setOrderStatus(Status.SHIPPED);
             orderRepository.save(order);
@@ -61,6 +62,9 @@ public class OrderService {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new OrderDoesNotExistsException(orderId));
 
+        if (!order.getOrderStatus().equals(Status.ONGOING)) {
+            throw new OrderCantSwitchToThatOrderStatus(orderId, order.getOrderStatus(), Status.CANCEL);
+        }
         try {
             order.setOrderStatus(Status.CANCEL);
             orderRepository.save(order);
@@ -83,6 +87,10 @@ public class OrderService {
     public OrderResponse receivedOrder(Long orderId) {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new OrderDoesNotExistsException(orderId));
+
+        if (!order.getOrderStatus().equals(Status.SHIPPED)) {
+            throw new OrderCantSwitchToThatOrderStatus(orderId, order.getOrderStatus(), Status.RECEIVED);
+        }
 
         try {
             order.setOrderStatus(Status.RECEIVED);
@@ -107,6 +115,9 @@ public class OrderService {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new OrderDoesNotExistsException(orderId));
 
+        if (!order.getOrderStatus().equals(Status.RECEIVED)) {
+            throw new OrderCantSwitchToThatOrderStatus(orderId, order.getOrderStatus(), Status.RETURNED);
+        }
         try {
             order.setOrderStatus(Status.RETURNED);
             orderRepository.save(order);

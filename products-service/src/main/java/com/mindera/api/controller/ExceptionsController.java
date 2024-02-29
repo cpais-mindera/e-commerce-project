@@ -13,7 +13,6 @@ import static com.mindera.api.model.Error.createErrorHandler;
 @RequestMapping("/products")
 public abstract class ExceptionsController {
 
-    // Exception Handlers
     @ExceptionHandler(ProductDoesNotExistsException.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     private ResponseEntity<Error> handleProductDoesNotExistsException(ProductDoesNotExistsException ex) {

@@ -17,7 +17,7 @@ import java.util.UUID;
 public class Order {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long orderId;
     @Column(unique = true, nullable = false)
     private UUID cartId;

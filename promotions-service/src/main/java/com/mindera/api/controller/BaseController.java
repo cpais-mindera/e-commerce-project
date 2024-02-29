@@ -10,7 +10,6 @@ import static com.mindera.api.model.Error.createErrorHandler;
 
 public abstract class BaseController {
 
-    // Exception Handlers
     @ExceptionHandler(PromotionDoesNotExistsException.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     private ResponseEntity<Error> handlePromotionDoesNotExistsException(PromotionDoesNotExistsException ex) {

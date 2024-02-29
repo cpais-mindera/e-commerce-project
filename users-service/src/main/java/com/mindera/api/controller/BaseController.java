@@ -11,7 +11,6 @@ import static com.mindera.api.model.Error.createErrorHandler;
 
 public abstract class BaseController {
 
-    // Exception Handlers
     @ExceptionHandler(InvalidHeaderAuthorizationException.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     private ResponseEntity<Error> handleInvalidHeaderAuthorization(InvalidHeaderAuthorizationException ex) {

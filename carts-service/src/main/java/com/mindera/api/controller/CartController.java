@@ -11,6 +11,7 @@ import com.mindera.api.service.CartService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -25,9 +26,15 @@ public class CartController extends BaseController {
     }
 
     // Postman
+    @GetMapping("/{cartId}")
+    public ResponseEntity<CartFullResponse> getCart(@RequestHeader("Authorization") String authorization, @PathVariable UUID cartId) {
+        return ResponseEntity.ok().body(cartService.getCart(authorization, cartId));
+    }
+
+    // Postman
     @GetMapping
-    public ResponseEntity<CartFullResponse> getCart(@RequestHeader("Authorization") String authorization) {
-        return ResponseEntity.ok().body(cartService.getCart(authorization));
+    public ResponseEntity<List<CartFullResponse>> getAllCartsByUser(@RequestHeader("Authorization") String authorization) {
+        return ResponseEntity.ok().body(cartService.getAllCartsByUser(authorization));
     }
 
     // Postman

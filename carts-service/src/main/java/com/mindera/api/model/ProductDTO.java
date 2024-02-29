@@ -23,3 +23,13 @@ public class ProductDTO {
     private Category category;
 
 }
+/*
+private UUID id;
+private String description;
+private Double defaultPrice;
+private String name;
+private String colour;
+private Integer stock;
+private Category category;
+private ProductStatus productStatus;
+*/
