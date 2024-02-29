@@ -17,8 +17,8 @@ springdoc:
   show-actuator: true
 
 server:
-  port: 8085
+  port: 8086
 
-queue:
-  paymentListener: PAYMENT_LISTENER
+queues:
   cartSender: CART_SENDER
+  userListener: USER_LISTENER

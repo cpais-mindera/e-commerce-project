@@ -1,9 +1,7 @@
 package com.mindera.api.model.responses;
 
-import com.mindera.api.domain.Address;
-import com.mindera.api.domain.Cart;
-import com.mindera.api.domain.CartProduct;
-import com.mindera.api.domain.PaymentMethod;
+import com.mindera.api.domain.*;
+import com.mindera.api.enums.CartStatus;
 import lombok.Data;
 
 import java.time.LocalDateTime;
@@ -16,11 +14,12 @@ public class CartResponse {
     private UUID id;
     private Address address;
     private List<CartProduct> cartProducts;
-    private PaymentMethod paymentMethod;
+    private List<CartPayment> paymentMethod;
     private Long user;
     private LocalDateTime createdAt;
     private LocalDateTime lastModifiedAt;
     private Long discount;
+    private CartStatus cartStatus;
 
     public CartResponse(Cart cart) {
         this.id = cart.getId();
@@ -31,6 +30,7 @@ public class CartResponse {
         this.createdAt = cart.getCreatedAt();
         this.lastModifiedAt = cart.getLastModifiedAt();
         this.discount = cart.getDiscountId();
+        this.cartStatus = cart.getCartStatus();
     }
 
 }

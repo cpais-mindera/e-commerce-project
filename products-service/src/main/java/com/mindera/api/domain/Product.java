@@ -30,6 +30,7 @@ public class Product {
     @Column(nullable = false)
     private String colour;
     @Column
+    @Enumerated(EnumType.STRING)
     private Size size;
     @Column
     private Integer stock;
@@ -37,6 +38,7 @@ public class Product {
     @Enumerated(EnumType.STRING)
     private Category category;
     @Column
+    @Enumerated(EnumType.STRING)
     private ProductStatus productStatus;
 
     public Product(String description, Double defaultPrice, String name,

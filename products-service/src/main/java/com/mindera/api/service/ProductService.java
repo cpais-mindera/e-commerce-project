@@ -29,7 +29,6 @@ import java.util.stream.Collectors;
 public class ProductService {
 
     private final ProductRepository productRepository;
-    private final RestTemplate restTemplate;
     private final UserRequestAndReceive userRequestAndReceive;
 
     @Cacheable("products")
@@ -52,6 +51,7 @@ public class ProductService {
     public ProductDTO addProduct(String authorization, Product product) {
         if (isAdminUser(authorization)) {
             try {
+                product.setProductStatus(ProductStatus.ACTIVE);
                 productRepository.save(product);
                 return new ProductDTO(product);
             } catch (DataIntegrityViolationException ex) {

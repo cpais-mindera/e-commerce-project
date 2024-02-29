@@ -1,9 +1,8 @@
 package com.mindera.api.service;
 
-import com.mindera.api.domain.Address;
-import com.mindera.api.domain.Cart;
-import com.mindera.api.domain.CartProduct;
-import com.mindera.api.domain.PaymentMethod;
+import com.mindera.api.domain.*;
+import com.mindera.api.enums.CartStatus;
+import com.mindera.api.enums.PaymentStatus;
 import com.mindera.api.exception.*;
 import com.mindera.api.message.*;
 import com.mindera.api.message.model.PaymentResponseMessage;
@@ -13,6 +12,7 @@ import com.mindera.api.model.requests.PaymentMethodRequest;
 import com.mindera.api.model.requests.ProductRequest;
 import com.mindera.api.model.responses.CartFullResponse;
 import com.mindera.api.model.responses.CartResponse;
+import com.mindera.api.repository.CartPaymentsRepository;
 import com.mindera.api.repository.CartProductsRepository;
 import com.mindera.api.repository.CartRepository;
 import lombok.RequiredArgsConstructor;
@@ -34,6 +34,7 @@ public class CartService {
 
     private final CartRepository cartRepository;
     private final CartProductsRepository cartProductsRepository;
+    private final CartPaymentsRepository cartPaymentsRepository;
     private final PaymentRequestAndReceive paymentRequestAndReceive;
     private final UserRequestAndReceive userRequestAndReceive;
     private final ProductRequestAndReceive productRequestAndReceive;
@@ -104,6 +105,7 @@ public class CartService {
         }
 
         try {
+            cart.setCartStatus(CartStatus.IN_PROGRESS);
             cartRepository.save(cart);
         } catch (DataIntegrityViolationException ex) {
             switch(ex.getCause()) {
@@ -177,6 +179,9 @@ public class CartService {
         Cart cart = cartRepository.findByUserIdAndId(userResponse.getId(), cartId)
                 .orElseThrow(() -> new CartDoesNotExistsException(userResponse.getId()));
 
+        if (cart.getCartStatus().equals(CartStatus.CONVERTED_TO_ORDER)) throw new CartAlreadyConvertedToOrderException();
+
+
         double totalPrice;
         if (!cart.getCartProducts().isEmpty() && cart.getAddress() != null) {
             if (cart.getDiscountId() != null ) {
@@ -196,20 +201,44 @@ public class CartService {
             throw new NeedToHaveProductsOrAddressInYourCartException();
         }
 
+        // TODO
+        //  If payment is paid already we can't add new payment
+        //  Else we need to pay again
+
         PaymentResponseMessage paymentResponseMessage = paymentRequestAndReceive.sendRequestAndReceiveResponse(paymentMethod, totalPrice, cart.getId());
 
         try {
             PaymentMethod paymentMethod1 = new PaymentMethod(paymentResponseMessage);
-            cart.setPaymentMethod(paymentMethod1);
+            CartPayment cartPayment = CartPayment.builder()
+                    .cart(cart)
+                    .paymentMethod(paymentMethod1)
+                    .amount(totalPrice)
+                    .build();
+
+
+            cartPaymentsRepository.save(cartPayment);
+
+            if (paymentMethod1.getPaymentStatus().equals(PaymentStatus.PAID)) {
+                cart.setCartStatus(CartStatus.CONVERTED_TO_ORDER);
+            }
+
             cartRepository.save(cart);
         } catch (Exception ex) {
-            log.error("Error setting address inside cart: " + cart);
+            log.error("Error setting payment inside cart: " + cart);
         }
         return new CartResponse(cart);
     }
 
+
     private boolean userAlreadyHaveCart(UserDTO userDTO) {
-        return cartRepository.findByUserId(userDTO.getId()).isPresent();
+        Optional<Cart> cartByUser = cartRepository.findByUserId(userDTO.getId());
+
+        if (cartByUser.isEmpty()) {
+            return false;
+        }
+
+        CartStatus cartStatus = cartByUser.get().getCartStatus();
+        return !(cartStatus == CartStatus.CANCELLED || cartStatus == CartStatus.CONVERTED_TO_ORDER);
     }
 
     private UserDTO getUser(String authorization) {

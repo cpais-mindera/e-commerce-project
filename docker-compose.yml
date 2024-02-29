@@ -208,6 +208,46 @@ services:
     networks:
       - default_net      
 
+    ############################ ORDERS ############################
+  database-orders:
+    image: postgres:13
+    container_name: database-orders
+    volumes:
+      - ~/.docker-conf/postgres/data/:/var/lib/postgres
+    ports:
+      - "5437:5432"
+    environment:
+      POSTGRES_USER: carlos
+      POSTGRES_PASSWORD: 12345
+      POSTGRES_DB: orders
+    networks:
+      - default_net
+
+  app-orders:
+    container_name: app-orders
+    build:
+      context: "./orders-service"
+    ports:
+      - 8087:8080
+    depends_on:
+      - database-orders
+      - rabbitmq
+    environment:
+      TZ: Europe/Lisbon
+      DB_HOST: database-orders
+      DB_PORT: 5432
+      DB_NAME: orders
+      DB_USER: carlos
+      DB_PASS: 12345
+      SQL_SHOW: true
+      DLL_AUTO: update
+      RABBIT_HOST: rabbitmq
+      RABBIT_PORT: 5672
+      RABBIT_USER: carlos
+      RABBIT_PASS: 12345
+    networks:
+      - default_net      
+
   ############################ RABBITMQ ############################
   rabbitmq:
     image: rabbitmq:3.12.12-management

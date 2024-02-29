@@ -12,20 +12,20 @@ import org.springframework.context.annotation.Configuration;
 @EnableRabbit
 public class MessageConfig {
 
-    @Value("${queue.paymentListener}")
-    private String queuePaymentListenerName;
-
-    @Bean
-    public Queue queuePaymentListener() {
-        return new Queue(queuePaymentListenerName, true);
-    }
-
-    @Value("${queue.cartSender}")
+    @Value("${queues.cartSender}")
     private String queueCartSenderName;
+
+    @Value("${queues.userListener}")
+    private String queueUserListenerName;
 
     @Bean
     public Queue queueCartSender() {
         return new Queue(queueCartSenderName, true);
+    }
+
+    @Bean
+    public Queue queueUserListener() {
+        return new Queue(queueUserListenerName, true);
     }
 
     @Bean

@@ -1,2 +1,2 @@
 # e-commerce app
-Products Service
+Orders Service

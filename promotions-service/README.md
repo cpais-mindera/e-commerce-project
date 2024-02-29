@@ -1,2 +1,2 @@
-# upskill-project-example
-Upskill Project Example
+# e-commerce app
+Promotions Service

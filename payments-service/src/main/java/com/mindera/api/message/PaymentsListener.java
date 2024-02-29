@@ -4,6 +4,7 @@ import com.mindera.api.domain.Payment;
 import com.mindera.api.enums.Status;
 import com.mindera.api.model.PaymentResponse;
 import com.mindera.api.repository.PaymentRepository;
+import org.springframework.amqp.core.Queue;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
@@ -16,12 +17,14 @@ import org.springframework.stereotype.Component;
 @Slf4j
 public class PaymentsListener {
 
-    private final RabbitTemplate rabbitTemplate;
-    public PaymentRepository paymentRepository;
+    private final PaymentRepository paymentRepository;
+    private final OrderMessageSender orderMessageSender;
+    private final Queue queuePaymentListener;
 
     @RabbitListener(queues = "PAYMENT_LISTENER")
     public PaymentResponse receive(@Payload PaymentMessage paymentMessage) {
         Payment payment;
+
         payment = Payment.builder()
                 .cartId(paymentMessage.getCartId())
                 .cardHolderName(paymentMessage.getCardHolderName())
@@ -31,6 +34,8 @@ public class PaymentsListener {
 
         if (paymentMessage.getCvv().equals(999L)) {
             payment = passPayment(payment);
+
+            orderMessageSender.send(paymentMessage.getCartId());
         } else {
             payment = declinePayment(payment);
         }

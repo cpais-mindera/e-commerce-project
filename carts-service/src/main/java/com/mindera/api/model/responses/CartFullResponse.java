@@ -2,6 +2,7 @@ package com.mindera.api.model.responses;
 
 import com.mindera.api.domain.Address;
 import com.mindera.api.domain.Cart;
+import com.mindera.api.domain.CartPayment;
 import com.mindera.api.domain.PaymentMethod;
 import com.mindera.api.model.DiscountDTO;
 import com.mindera.api.model.ProductDTO;
@@ -19,7 +20,7 @@ public class CartFullResponse {
     private double totalPrice;
     private Address address;
     private List<ProductDTO> cartProducts;
-    private PaymentMethod paymentMethod;
+    private List<CartPayment> paymentMethod;
     private UserDTO user;
     private LocalDateTime createdAt;
     private LocalDateTime lastModifiedAt;
