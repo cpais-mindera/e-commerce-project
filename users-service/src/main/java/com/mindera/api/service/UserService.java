@@ -149,6 +149,7 @@ public class UserService {
     private void throwDataIntegrityException(DataIntegrityViolationException ex) {
         switch(ex.getCause()) {
             case ConstraintViolationException constraintEx -> {
+                // TODO validate getConstraintName
                 String constraintName = constraintEx.getConstraintName();
                 throw new UserDuplicateException(constraintName);
             }
